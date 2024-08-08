@@ -13,7 +13,7 @@ RtcDS1302<ThreeWire> Rtc(myWire);
 
 //Tiempo configurado por el usuario
 int sec = 0;
-int min = 0;
+int minutes= 0;
 int hrs = 0;
 
 int day = 1;
@@ -131,9 +131,8 @@ void loop() {
   //Verifica si el botón de configuración/modo se mantiene presionado
   if(Btn_Adjust_Sts == LOW){
     loops++;
-    lcd.print("*");
 
-    //Si se mantiene pulsado por 10 loops, el reloj entrará en el modo de configuración
+    //Si se mantiene pulsado por 10 "loops", el reloj entrará en el modo de configuración
     if(loops >= 10){
       setting = true;
       loops = 0;
@@ -141,7 +140,7 @@ void loop() {
       //Guardando la ultima hora y fecha para modificarla
       RtcDateTime now = Rtc.GetDateTime();
       sec = now.Second();
-      min = now.Minute();
+      minutes= now.Minute();
       hrs = now.Hour();
 
       day = now.Day();
@@ -156,8 +155,8 @@ void loop() {
   if(setting == true){
     int pm = 0;
 
-    lcd.setCursor(15,0);
-    lcd.print("*");
+    lcd.setCursor(13,0);
+    lcd.print("|*|");
 
     lcd.setCursor(0,0);
 
@@ -186,12 +185,22 @@ void loop() {
     }
 
     //Condicional para escribir en formato de 12 hrs
-    if(hrs <= 12){
-      PrintClock(hrs);
-      pm = 0;
+    if(blink == 0 && mode == 0){
+      lcd.print("  ");
+
+      if(hrs <= 12){
+        pm = 0;
+      } else {
+        pm = 1;
+      }
     } else {
-      PrintClock(hrs - 12);
-      pm = 1;
+      if(hrs <= 12){
+        PrintClock(hrs);
+        pm = 0;
+      } else {
+        PrintClock(hrs - 12);
+        pm = 1;
+      }
     }
 
     lcd.print(":");
@@ -199,17 +208,22 @@ void loop() {
     //Minutos (min)
     if(mode == 1){
       if(Btn_Add_Sts == LOW){
-        min++;
+        minutes++;
       } else {
         if(Btn_Substract_Sts == LOW){
-          min--;
+          minutes--;
         }
       }
       
-      if(min <= -1){ min = 59; }
-      if(min > 59){ min = 0; }
+      if(minutes<= -1){ minutes= 59; }
+      if(minutes> 59){ minutes= 0; }
     }
-    PrintClock(min);
+
+    if(blink == 0 && mode == 1){
+      lcd.print("  ");
+    } else {
+      PrintClock(minutes);
+    }
 
     lcd.print(":");
 
@@ -226,7 +240,12 @@ void loop() {
       if(sec <= -1){ sec = 59; }
       if(sec > 59){ sec = 0; }
     }
-    PrintClock(sec);
+
+    if(blink == 0 && mode == 2){
+      lcd.print("  ");
+    } else {
+      PrintClock(sec);
+    }
 
     //Escribe AM o PM al final de la hora
     lcd.setCursor(9, 0);
@@ -252,7 +271,12 @@ void loop() {
       if(day <= 0){ day = 31; }
       if(day > 31){ day = 1; }
     }
-    PrintClock(day);  
+
+    if(blink == 0 && mode == 3){
+      lcd.print("  ");
+    } else {
+      PrintClock(day);
+    }
 
     lcd.print("/");
     
@@ -269,7 +293,12 @@ void loop() {
       if(month <= 0){ month = 12; }
       if(month > 12){ month = 1; }
     }
-    PrintClock(month);
+
+    if(blink == 0 && mode == 4){
+      lcd.print("  ");
+    } else {
+      PrintClock(month);
+    }
 
     lcd.print("/");
 
@@ -283,22 +312,31 @@ void loop() {
         }
       }
     }
-    lcd.print(year);
+
+    if(blink == 0 && mode == 5){
+      lcd.print("  ");
+    } else {
+      lcd.print(year);
+    }
 
     if(Btn_Adjust_Sts == LOW){
     loops++;
-    if(loops >= 10){
-      setting = false;
-      RtcDateTime newTime(year, month, day, hrs, min, sec);
-      Rtc.SetDateTime(newTime);
+      if(loops >= 10){
+        setting = false;
+        RtcDateTime newTime(year, month, day, hrs, minutes, sec);
+        Rtc.SetDateTime(newTime);
+        loops = 0;
+      }
+    } else {
       loops = 0;
     }
-  } else {
-    loops = 0;
-  }
+    if(blink == 0){
+      blink++;
+    } else {
+      blink--;
+    }
 
-    blink++;
-    delay(250);
+    delay(200);
   } else {
     Clock();  
   }
