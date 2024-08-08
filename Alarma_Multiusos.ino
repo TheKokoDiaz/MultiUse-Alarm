@@ -12,18 +12,22 @@ ThreeWire myWire(9, 8, 10);   //Pines: DAT, CLK, RST
 RtcDS1302<ThreeWire> Rtc(myWire);
 
 //Tiempo configurado por el usuario
+//Hora
 int sec = 0;
 int minutes= 0;
 int hrs = 0;
 
+//Fecha
 int day = 1;
 int month = 1;
-int year = 2000;
+int year = 2020;
 
+//Variables Extras para mejor personalización y vista
 int blink = 0;
 int mode = 0;
 int page = 0;
 int loops = 0;
+bool format = true;
 bool setting = false;
 
 //LCD
@@ -57,10 +61,6 @@ void setup() {
   //Push Buttons
   pinMode(Btn_Adjust, INPUT);
 
-  /* Rtc.Begin();
-  RtcDateTime CurrentTime = RtcDateTime(__DATE__ , __TIME__);
-  Rtc.SetDateTime(CurrentTime); */
-
   //Configuración de reloj
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
   RtcDateTime zeroTime(2020, 1, 1, 0, 0, 0);
@@ -88,12 +88,20 @@ void Clock(){
  	lcd.setCursor(0,0);
 
   //Condicional para escribir en formato de 12 hrs
-  if(now.Hour() <= 12){
- 	  PrintClock(now.Hour());
-    pm = 0;
+  if(format == true){
+    if(now.Hour() == 0){
+      PrintClock(12);
+    } else {
+      if(now.Hour() <= 12){
+        PrintClock(now.Hour());
+        pm = 0;
+      } else {
+        PrintClock(now.Hour() - 12);
+        pm = 1;
+      }
+    }
   } else {
-    PrintClock(now.Hour() - 12);
-    pm = 1;
+    PrintClock(now.Hour());
   }
 
  	lcd.print(":");
@@ -101,12 +109,14 @@ void Clock(){
  	lcd.print(":");
  	PrintClock(now.Second());
 
-  //Escribe AM o PM al final de la hora
-  lcd.setCursor(9, 0);
-  if(pm == 0){
-    lcd.print("AM");
-  } else {
-    lcd.print("PM");
+  //Escribe AM o PM al final de la hora si el formato es de 12hrs
+  if(format == true){
+    lcd.setCursor(9, 0);
+    if(pm == 0){
+      lcd.print("AM");
+    } else {
+      lcd.print("PM");
+    }
   }
 
   //Escribir fecha (DD/MM/AAAA)
@@ -125,8 +135,7 @@ void loop() {
   Btn_Adjust_Sts = digitalRead(Btn_Adjust);
   Btn_Add_Sts = digitalRead(Btn_Add);
   Btn_Substract_Sts = digitalRead(Btn_Substract);
-    lcd.clear();
-    lcd.setCursor(15,0);
+  lcd.clear();
 
   //Verifica si el botón de configuración/modo se mantiene presionado
   if(Btn_Adjust_Sts == LOW){
@@ -150,6 +159,17 @@ void loop() {
   } else {
     loops = 0;
   }
+  
+  //Permite cambiar entre el formato de 12 y 24 horas
+  if(Btn_Add_Sts == LOW && setting == false){
+    if(format == false){
+      format = true;
+    } else {
+      if(format == true){
+        format = false;
+      }
+    }
+  }
 
   //Modo de Configuración:
   if(setting == true){
@@ -169,7 +189,6 @@ void loop() {
       }
     }
 
-
     //Hora (hrs)
     if(mode == 0){
       if(Btn_Add_Sts == LOW){
@@ -179,9 +198,9 @@ void loop() {
           hrs--;
         }
       }
-      
-      if(hrs <= -1){ hrs = 24; }
-      if(hrs > 24){ hrs = 0; }
+
+      if(hrs <= -1){ hrs = 23; }
+      if(hrs > 23){ hrs = 0; }
     }
 
     //Condicional para escribir en formato de 12 hrs
@@ -194,12 +213,20 @@ void loop() {
         pm = 1;
       }
     } else {
-      if(hrs <= 12){
-        PrintClock(hrs);
-        pm = 0;
+      if(format == true){
+        if(hrs == 0){
+          PrintClock(12);
+        } else {
+          if(hrs <= 12){
+            PrintClock(hrs);
+            pm = 0;
+          } else {
+            PrintClock(hrs - 12);
+            pm = 1;
+          }
+        }
       } else {
-        PrintClock(hrs - 12);
-        pm = 1;
+        PrintClock(hrs);
       }
     }
 
@@ -247,12 +274,14 @@ void loop() {
       PrintClock(sec);
     }
 
-    //Escribe AM o PM al final de la hora
-    lcd.setCursor(9, 0);
-    if(pm == 0){
-      lcd.print("AM");
-    } else {
-      lcd.print("PM");
+    //Escribe AM o PM al final de la hora si el formato esta en 12 hrs
+    if(format == true){
+      lcd.setCursor(9, 0);
+      if(pm == 0){
+        lcd.print("AM");
+      } else {
+        lcd.print("PM");
+      }
     }
 
     //Escribir fecha
@@ -319,9 +348,10 @@ void loop() {
       lcd.print(year);
     }
 
+    //Configurar la nueva hora
     if(Btn_Adjust_Sts == LOW){
     loops++;
-      if(loops >= 10){
+      if(loops >= 10 && Btn_Adjust_Sts == LOW){
         setting = false;
         RtcDateTime newTime(year, month, day, hrs, minutes, sec);
         Rtc.SetDateTime(newTime);
@@ -330,6 +360,8 @@ void loop() {
     } else {
       loops = 0;
     }
+
+    //Variables para el "parpadeo" del campo a editar
     if(blink == 0){
       blink++;
     } else {
