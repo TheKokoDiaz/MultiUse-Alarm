@@ -88,10 +88,7 @@ void PrintClock(int t) {
 }
 
 //Función para imprimir la fecha
-void Date(){
-  //Obtenemos la fecha y hora
-  RtcDateTime now = Rtc.GetDateTime();
-
+void Date(RtcDateTime now){
   //Escribir fecha (DD/MM/AAAA)
  	lcd.setCursor(0,1);
  	PrintClock(now.Day());
@@ -102,12 +99,7 @@ void Date(){
 }
 
 //Función para imprimir la hora como un reloj digital
-void Clock(){
-  int pm = 0;
-
-  //Obtenemos la fecha y hora
-  RtcDateTime now = Rtc.GetDateTime();
- 	
+void Clock(RtcDateTime now, int pm){
   //Escribir hora (HH:MM:SS)
  	lcd.setCursor(0,0);
 
@@ -151,7 +143,9 @@ void Clock(){
 }
 
 void loop() {
-  //Refresco de la hora
+  int pm = 0;
+
+  //Obtenemos la fecha y hora
   RtcDateTime now = Rtc.GetDateTime();
 
   //Lectura de datos
@@ -183,7 +177,6 @@ void loop() {
         loops = 0;
 
         //Guardando la ultima hora y fecha para modificarla
-        RtcDateTime now = Rtc.GetDateTime();
         sec = now.Second();
         minutes= now.Minute();
         hrs = now.Hour();
@@ -207,8 +200,6 @@ void loop() {
 
     //Modo de Configuración:
     if(setting == true){
-      int pm = 0;
-
       lcd.setCursor(13,0);
       lcd.print("|*|");
 
@@ -403,15 +394,13 @@ void loop() {
       }
 
     } else {
-      Clock();
-      Date();
+      Clock(now, pm);
+      Date(now);
     }
   }
 
   //Alarma
   if(page == 1){
-    int pm = 0;
-
     //Escribe que te encuentras en la página de la alarma
     lcd.setCursor(0,0);
     lcd.print("Alarma: ");
