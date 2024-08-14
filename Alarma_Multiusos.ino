@@ -6,6 +6,9 @@
 //Pantalla LCD
 #include <LiquidCrystal.h>
 
+//Sensor de temperatura
+#include <Arduino_HS300x.h>
+
 //Pin extra
 #define PIN_A0 (14)
 
@@ -62,6 +65,9 @@ int Btn_Substract = 13;
 int Btn_Substract_Sts = 0;
 
 void setup() {
+  //Inicialización del sensor del Nano Arduino
+  HS300x.begin();
+
   //Definimos los Pines
   pinMode(Btn_Adjust, INPUT);
   pinMode(Btn_Add, INPUT);
@@ -136,10 +142,19 @@ void Clock(RtcDateTime now, int pm){
   }
 
   //Escribe si la alarma se encuentra activa
-  lcd.setCursor(13, 1);
   if(activated == true){
+    lcd.setCursor(13, 0);
     lcd.print("Alm");
   }
+}
+
+//Función para imprimir la temperatura
+void Temperature(){
+  //Obtiene la temperatura del ambiente
+  float temperature = HS300x.readTemperature();
+
+  lcd.setCursor(11,1);
+  lcd.print(temperature);
 }
 
 void loop() {
@@ -155,15 +170,15 @@ void loop() {
   lcd.clear();
 
   //Cambio de modo entre reloj y alarma
-    if(Btn_Substract_Sts == LOW && setting == false){
-      if(page == 0){
-        page = 1;
-      } else {
-        if(page == 1){
-          page = 0;
-        }
+  if(Btn_Substract_Sts == LOW && setting == false){
+    if(page == 0){
+      page = 1;
+    } else {
+      if(page == 1){
+        page = 0;
       }
     }
+  }
 
   //Reloj
   if(page == 0){
@@ -375,7 +390,7 @@ void loop() {
 
       //Configurar la nueva hora
       if(Btn_Adjust_Sts == LOW){
-      loops++;
+        loops++;
         if(loops >= 10 && Btn_Adjust_Sts == LOW){
           setting = false;
           RtcDateTime newTime(year, month, day, hrs, minutes, sec);
@@ -394,6 +409,7 @@ void loop() {
       }
 
     } else {
+      Temperature();
       Clock(now, pm);
       Date(now);
     }
